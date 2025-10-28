@@ -1,0 +1,137 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{% static 'styles/styles.css' %}">
+</head>
+<body>
+    <h1>Welcome to Predict Page</h1>
+    <p>Enter the following data</p>
+  <form method="POST">
+    {% csrf_token %}
+ <div class="form-group">
+    <label>Age or Code :</label>
+    <input type="number" name="ag+1:629e" step="any" min="0" required>
+</div>
+
+<div class="form-group">
+    <label>Feeling Nervous:</label>
+    <input type="number" name="feeling.nervous" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Panic:</label>
+    <input type="number" name="panic" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Breathing Rapidly:</label>
+    <input type="number" name="breathing.rapidly" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Sweating:</label>
+    <input type="number" name="sweating" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Trouble in Concentration:</label>
+    <input type="number" name="trouble.in.concentration" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Having Trouble in Sleeping:</label>
+    <input type="number" name="having.trouble.in.sleeping" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Having Trouble with Work:</label>
+    <input type="number" name="having.trouble.with.work" min="0" max="1" required>
+    </div>
+<div class="form-group">
+    <label>Hopelessness:</label>
+    <input type="number" name="hopelessness" min="0" max="1" required>
+</div>
+<div class="form-group">
+     <label>Anger:</label>
+    <input type="number" name="anger" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Over React:</label>
+    <input type="number" name="over.react" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Change in Eating:</label>
+    <input type="number" name="change.in.eating" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Suicidal Thought:</label>
+    <input type="number" name="suicidal.thought" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Feeling Tired:</label>
+    <input type="number" name="feeling.tired" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Close Friend:</label>
+    <input type="number" name="close.friend" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Social Media Addiction:</label>
+    <input type="number" name="social.media.addiction" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Weight Gain:</label>
+    <input type="number" name="weight.gain" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Introvert:</label>
+    <input type="number" name="introvert" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Popping Up Stressful Memory:</label>
+    <input type="number" name="popping.up.stressful.memory" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Having Nightmares:</label>
+    <input type="number" name="having.nightmares" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Avoids People or Activities:</label>
+    <input type="number" name="avoids.people.or.activities" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Feeling Negative:</label>
+    <input type="number" name="feeling.negative" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Trouble Concentrating:</label>
+    <input type="number" name="trouble.concentrating" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Blamming Yourself:</label>
+    <input type="number" name="blamming.yourself" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Hallucinations:</label>
+    <input type="number" name="hallucinations" min="0" max="1" required>
+</div>
+<div class="form-group">
+    <label>Repetitive Behaviour:</label>
+    <input type="number" name="repetitive.behaviour" min="0" max="1" required>
+</div>
+<div class="form-group">
+        <label>Seasonally:</label>
+        <input type="number" name="seasonally" min="0" max="1" required>
+</div>
+<div class="form-group">
+        <label>Increased Energy:</label>
+        <input type="number" name="increased.energy" min="0" max="1" required>
+</div>
+    <button type="submit">Predict Disorder</button>
+</form> 
+<div>
+    <h3>{{result}}</h3>
+    </div>
+</body>
+</html>
+
+
+
