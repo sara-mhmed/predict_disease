@@ -14,9 +14,6 @@ env/
 # Environment variables file
 .env
 
-#  Database
-db.sqlite3
-
 
 
 # Logs and temporary files
