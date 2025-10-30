@@ -1,18 +1,34 @@
 from pathlib import Path
 import os
-
-# فقط لو بتشتغلي محليًا
 from dotenv import load_dotenv
+
+# Load environment variables (only used locally)
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Security and environment configuration
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'fallback-secret')
-DEBUG = os.getenv('DEBUG', 'False').lower() == 'True'
 
-ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '*').split(',')]
-CSRF_TRUSTED_ORIGINS = ['https://predictdisease.up.railway.app']
+# DEBUG is automatically True for local, False for production
+DEBUG = os.getenv('DEBUG', str('127.0.0.1' in os.getenv('ALLOWED_HOSTS', ''))).lower() == 'true'
 
+# ✅ Dynamic ALLOWED_HOSTS (works locally and on Railway)
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
+
+# Always allow localhost for development
+if '127.0.0.1' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS += ['127.0.0.1', 'localhost']
+
+# ✅ Dynamic CSRF_TRUSTED_ORIGINS based on allowed hosts
+CSRF_TRUSTED_ORIGINS = []
+for host in ALLOWED_HOSTS:
+    if host not in ['127.0.0.1', 'localhost']:
+        CSRF_TRUSTED_ORIGINS.append(f'https://{host}')
+        CSRF_TRUSTED_ORIGINS.append(f'http://{host}')  # Useful if Flutter uses HTTP
+
+# ---------------------------------------------------------------------
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -56,7 +72,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'predict_disorder.wsgi.application'
 
-# ✅ قاعدة بيانات ديناميكية
+# ✅ Dynamic database (SQLite locally, PostgreSQL on Railway)
 if os.getenv('DATABASE_URL'):
     import dj_database_url
     DATABASES = {
@@ -70,6 +86,8 @@ else:
         }
     }
 
+# ---------------------------------------------------------------------
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -82,11 +100,19 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
+# ---------------------------------------------------------------------
+
+# Static files configuration
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'myapp' / 'static']
 
+# WhiteNoise for serving static files in production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# ---------------------------------------------------------------------
+
+# Django REST framework configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
@@ -97,5 +123,3 @@ REST_FRAMEWORK = {
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
