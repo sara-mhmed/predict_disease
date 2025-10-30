@@ -1,18 +1,16 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view
 import json
 import os
 import numpy as np
 from tensorflow.keras.models import load_model
 import joblib
-
 from django.db import connection
 
 print("🚀 Starting Django app...")
 
+# تحميل الموديل
 try:
     print("🧠 Loading Keras model...")
     model = load_model(os.path.join('ml_models', 'general_model.h5'))
@@ -21,6 +19,7 @@ except Exception as e:
     print("❌ Error loading model:", e)
     model = None
 
+# تحميل الـ label encoder
 try:
     print("🎯 Loading label encoder...")
     label_encoder = joblib.load(os.path.join('ml_models', 'label_encoder.pkl'))
@@ -31,6 +30,7 @@ except Exception as e:
 
 print("🔥 Views.py finished loading!")
 
+# قائمة الخصائص المطلوبة للتنبؤ
 FEATURES_NAME = [
     'ag+1:629e', 'feeling.nervous', 'panic', 'breathing.rapidly', 'sweating',
     'trouble.in.concentration', 'having.trouble.in.sleeping', 'having.trouble.with.work',
@@ -39,9 +39,13 @@ FEATURES_NAME = [
     'introvert', 'popping.up.stressful.memory', 'having.nightmares',
     'avoids.people.or.activities', 'feeling.negative', 'trouble.concentrating',
     'blamming.yourself', 'hallucinations', 'repetitive.behaviour',
-    'seasonally', 'increased.energy' 
+    'seasonally', 'increased.energy'
 ]
 
+# جلب التوكن من Environment Variable
+SUPERUSER_TOKEN = os.getenv("SUPERUSER_TOKEN")
+
+# صفحة التنبؤ العادية
 def predict(request):
     if request.method == 'POST':
         try:
@@ -54,42 +58,46 @@ def predict(request):
             return render(request, 'predict.html', {"error": str(e)})
     return render(request, 'predict.html')
 
+# API التنبؤ المحمي بالتوكن
 @api_view(['POST'])
-@authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
-
 def api_predict(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body.decode('utf-8'))
+    # التحقق من التوكن قبل أي عملية
+    token = request.headers.get('Authorization')  # في Postman: "Token <توكن>"
+    if token != f"Token {SUPERUSER_TOKEN}":
+        return JsonResponse({"error": "Unauthorized"}, status=401)
 
-            # checking on if all features are present in the request
-            missing_features = [key for key in FEATURES_NAME if key not in data]
-            if missing_features:
-                return JsonResponse({"error": f"Missing features: {', '.join(missing_features)}"}, status=400)
-            
-            #the first feature is age check on it >=0
-            first_feature = float(data.get(FEATURES_NAME[0]))
-            if first_feature < 0:
-                return JsonResponse({"error": "Age must be a non-negative value."}, status=400)
+    try:
+        data = json.loads(request.body.decode('utf-8'))
 
-            # check all features are zero or one
-            invalid_features= {}
-            for key in FEATURES_NAME[1:]:
-                value = int(data.get(key))
-                if value not in [0, 1]:
-                    invalid_features[key] = value
-            if invalid_features:
-                return JsonResponse({"error": f"Invalid feature values (should be 0 or 1): {invalid_features}"}, status=400)
-            
-            features = np.array([[int(data.get(key)) for key in FEATURES_NAME]])
-            prediction = model.predict(features)
-            predicted_disorder = label_encoder.inverse_transform([np.argmax(prediction)])[0]
-            return JsonResponse({"predicted_disorder": predicted_disorder})
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
-    return JsonResponse({"error": "Invalid request method."}, status=405)
-          
+        # التحقق من وجود كل الخصائص المطلوبة
+        missing_features = [key for key in FEATURES_NAME if key not in data]
+        if missing_features:
+            return JsonResponse({"error": f"Missing features: {', '.join(missing_features)}"}, status=400)
+
+        # تحقق من أن العمر غير سالب
+        first_feature = float(data.get(FEATURES_NAME[0]))
+        if first_feature < 0:
+            return JsonResponse({"error": "Age must be a non-negative value."}, status=400)
+
+        # تحقق أن كل الخصائص الأخرى 0 أو 1
+        invalid_features = {}
+        for key in FEATURES_NAME[1:]:
+            value = int(data.get(key))
+            if value not in [0, 1]:
+                invalid_features[key] = value
+        if invalid_features:
+            return JsonResponse({"error": f"Invalid feature values (should be 0 or 1): {invalid_features}"}, status=400)
+
+        # التنبؤ بالمرض
+        features = np.array([[int(data.get(key)) for key in FEATURES_NAME]])
+        prediction = model.predict(features)
+        predicted_disorder = label_encoder.inverse_transform([np.argmax(prediction)])[0]
+        return JsonResponse({"predicted_disorder": predicted_disorder})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
+# endpoint لعرض الجداول (اختياري، للتأكد من قاعدة البيانات)
 def list_tables(request):
     """Show all tables in current DB, works with SQLite or Postgres."""
     with connection.cursor() as cursor:
