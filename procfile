@@ -1,2 +1,2 @@
-release: python manage.py migrate authtoken
+release: python manage.py migrate
 web: gunicorn predict_disorder.wsgi
