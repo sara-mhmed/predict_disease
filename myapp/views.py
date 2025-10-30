@@ -91,8 +91,14 @@ def api_predict(request):
     return JsonResponse({"error": "Invalid request method."}, status=405)
           
 def list_tables(request):
-    """Temporary endpoint to list all database tables."""
+    """Show all tables in current DB, works with SQLite or Postgres."""
     with connection.cursor() as cursor:
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        vendor = connection.vendor  # 'sqlite', 'postgresql', 'mysql', ...
+        if vendor == 'sqlite':
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        elif vendor == 'postgresql':
+            cursor.execute("SELECT tablename FROM pg_tables WHERE schemaname='public';")
+        else:
+            return JsonResponse({"error": f"Unsupported DB: {vendor}"}, status=500)
         tables = [row[0] for row in cursor.fetchall()]
     return JsonResponse({"tables": tables})
