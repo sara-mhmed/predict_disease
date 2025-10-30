@@ -9,6 +9,8 @@ import numpy as np
 from tensorflow.keras.models import load_model
 import joblib
 
+from django.db import connection
+
 print("🚀 Starting Django app...")
 
 try:
@@ -88,3 +90,9 @@ def api_predict(request):
             return JsonResponse({"error": str(e)}, status=400)
     return JsonResponse({"error": "Invalid request method."}, status=405)
           
+def list_tables(request):
+    """Temporary endpoint to list all database tables."""
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = [row[0] for row in cursor.fetchall()]
+    return JsonResponse({"tables": tables})
