@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 import json
 import os
 import numpy as np
@@ -41,11 +42,7 @@ FEATURES_NAME = [
     'seasonally', 'increased.energy'
 ]
 
-# Function to get superuser token from environment
-def get_superuser_token():
-    return os.getenv("SUPERUSER_TOKEN")
-
-# Regular prediction page
+# Regular web page prediction (for HTML form)
 def predict(request):
     if request.method == 'POST':
         try:
@@ -58,28 +55,25 @@ def predict(request):
             return render(request, 'predict.html', {"error": str(e)})
     return render(request, 'predict.html')
 
-# Protected API prediction
-@api_view(['POST'])
-def api_predict(request):
-    # Check token before any operation
-    token = request.headers.get('Authorization')  # In Postman: "Token <your_token>"
-    if token != f"Token {get_superuser_token()}":
-        return JsonResponse({"error": "Unauthorized"}, status=401)
 
+# 🔒 Protected API endpoint (requires valid Token Authentication)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_predict(request):
     try:
         data = json.loads(request.body.decode('utf-8'))
 
-        # Check if all required features are present
+        # Validate required features
         missing_features = [key for key in FEATURES_NAME if key not in data]
         if missing_features:
             return JsonResponse({"error": f"Missing features: {', '.join(missing_features)}"}, status=400)
 
-        # Check first feature (age) is non-negative
+        # Validate age (first feature)
         first_feature = float(data.get(FEATURES_NAME[0]))
         if first_feature < 0:
             return JsonResponse({"error": "Age must be a non-negative value."}, status=400)
 
-        # Check all other features are 0 or 1
+        # Validate other features (should be 0 or 1)
         invalid_features = {}
         for key in FEATURES_NAME[1:]:
             value = int(data.get(key))
@@ -88,11 +82,15 @@ def api_predict(request):
         if invalid_features:
             return JsonResponse({"error": f"Invalid feature values (should be 0 or 1): {invalid_features}"}, status=400)
 
-        # Make the prediction
+        # Make prediction
         features = np.array([[int(data.get(key)) for key in FEATURES_NAME]])
         prediction = model.predict(features)
         predicted_disorder = label_encoder.inverse_transform([np.argmax(prediction)])[0]
-        return JsonResponse({"predicted_disorder": predicted_disorder})
+
+        return JsonResponse({
+            "predicted_disorder": predicted_disorder,
+            "user": request.user.username  # optional: shows which user made the request
+        })
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
