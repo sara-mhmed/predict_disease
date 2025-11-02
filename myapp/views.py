@@ -99,12 +99,15 @@ def api_predict(request):
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 
-def generate_token():
-    user = User.objects.first()
-    if user:
-        token, created = Token.objects.get_or_create(user=user)
-        print("TOKEN:", token.key)
-    else:
-        print("No user found!")
+print("🚀 Checking for default user...")
+if not User.objects.filter(username='admin').exists():
+    user = User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
+    token = Token.objects.create(user=user)
+    print("✅ Created superuser: admin / admin123")
+    print("🔑 Token:", token.key)
+else:
+    print("User already exists.")
+    existing_user = User.objects.get(username='admin')
+    token, _ = Token.objects.get_or_create(user=existing_user)
+    print("🔑 Existing user token:", token.key)
 
-generate_token()
