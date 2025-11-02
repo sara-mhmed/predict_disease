@@ -94,3 +94,17 @@ def api_predict(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
+
+
+from django.contrib.auth.models import User
+from rest_framework.authtoken.models import Token
+
+def generate_token():
+    user = User.objects.first()
+    if user:
+        token, created = Token.objects.get_or_create(user=user)
+        print("TOKEN:", token.key)
+    else:
+        print("No user found!")
+
+generate_token()
