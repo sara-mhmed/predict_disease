@@ -1,32 +1,31 @@
 from pathlib import Path
 import os
+import dj_database_url
 from dotenv import load_dotenv
 
-# Load environment variables (only used locally)
+# Load environment variables
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Security and environment configuration
+# ---------------------------------------------------------------------
+# Security
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'fallback-secret')
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-# DEBUG is automatically True for local, False for production
-DEBUG = os.getenv('DEBUG', str('127.0.0.1' in os.getenv('ALLOWED_HOSTS', ''))).lower() == 'true'
-
-# ✅ Dynamic ALLOWED_HOSTS (works locally and on Railway)
+# Allowed hosts
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
 
-# Always allow localhost for development
 if '127.0.0.1' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS += ['127.0.0.1', 'localhost']
 
-# ✅ Dynamic CSRF_TRUSTED_ORIGINS based on allowed hosts
+# CSRF trusted origins
 CSRF_TRUSTED_ORIGINS = []
 for host in ALLOWED_HOSTS:
     if host not in ['127.0.0.1', 'localhost']:
         CSRF_TRUSTED_ORIGINS.append(f'https://{host}')
-        CSRF_TRUSTED_ORIGINS.append(f'http://{host}')  # Useful if Flutter uses HTTP
+        CSRF_TRUSTED_ORIGINS.append(f'http://{host}')
 
 # ---------------------------------------------------------------------
 
@@ -72,11 +71,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'predict_disorder.wsgi.application'
 
-# ✅ Dynamic database (SQLite locally, PostgreSQL on Railway)
+# ---------------------------------------------------------------------
+# Database
 if os.getenv('DATABASE_URL'):
-    import dj_database_url
     DATABASES = {
-        'default': dj_database_url.config(default=os.getenv('DATABASE_URL'), conn_max_age=600)
+        'default': dj_database_url.config(
+            default=os.getenv('DATABASE_URL'),
+            conn_max_age=600,
+            ssl_require=True
+        )
     }
 else:
     DATABASES = {
@@ -101,18 +104,14 @@ USE_I18N = True
 USE_TZ = True
 
 # ---------------------------------------------------------------------
-
-# Static files configuration
+# Static files
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'myapp' / 'static']
-
-# WhiteNoise for serving static files in production
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ---------------------------------------------------------------------
-
-# Django REST framework configuration
+# Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
@@ -123,4 +122,3 @@ REST_FRAMEWORK = {
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
