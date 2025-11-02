@@ -2,9 +2,7 @@ import os
 import django
 from django.core.management import call_command
 
-# إعداد Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'predict_disorder.settings')
-
 django.setup()
 
 print("🚀 Running migrations on Railway...")
