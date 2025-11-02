@@ -1,2 +1,2 @@
-release: python manage.py migrate
+release: python run_migrations.py
 web: gunicorn predict_disorder.wsgi
