@@ -89,13 +89,14 @@ def api_predict(request):
 
         return JsonResponse({
             "predicted_disorder": predicted_disorder,
-            "user": request.user.username  # optional: shows which user made the request
+            "user": request.user.username  # optional
         })
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
 
 
+# Create default admin if not exist
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 
@@ -111,44 +112,7 @@ else:
     token, _ = Token.objects.get_or_create(user=existing_user)
     print("🔑 Existing user token:", token.key)
 
-
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def get_general_test(request):
-    """Return all general test questions."""
-    questions = [
-        {"id": 1, "question": "How old are you?"},
-        {"id": 2, "question": "Do you sometimes feel nervous or on edge for no clear reason?"},
-        {"id": 3, "question": "Have you ever had sudden moments where you felt scared or panicked out of nowhere?"},
-        {"id": 4, "question": "Do you notice your breathing getting faster when you feel anxious or stressed?"},
-        {"id": 5, "question": "Do you tend to sweat a lot when you’re worried or nervous?"},
-        {"id": 6, "question": "Do you find it hard to focus on things, even when you try?"},
-        {"id": 7, "question": "Do you often have trouble falling asleep or staying asleep through the night?"},
-        {"id": 8, "question": "Has stress or your mood made it harder for you to focus on work or school lately?"},
-        {"id": 9, "question": "Do you ever feel like things won’t get better, no matter what you do?"},
-        {"id": 10, "question": "Do you get frustrated or angry more easily than you’d like to?"},
-        {"id": 11, "question": "Do you feel like you sometimes overreact to small problems?"},
-        {"id": 12, "question": "Have your eating habits changed recently like eating too much or too little?"},
-        {"id": 13, "question": "Have you ever had thoughts about not wanting to be here anymore?"},
-        {"id": 14, "question": "Do you often feel tired or drained, even when you haven’t done much?"},
-        {"id": 15, "question": "Do you have someone you trust that you can talk to when you’re feeling low?"},
-        {"id": 16, "question": "Do you ever feel like you spend too much time on social media or can’t put your phone down?"},
-        {"id": 17, "question": "Have you noticed your weight changing recently without a clear reason?"},
-        {"id": 18, "question": "Do you prefer spending time alone instead of being around people?"},
-        {"id": 19, "question": "Do bad memories or stressful thoughts pop up suddenly in your mind?"},
-        {"id": 20, "question": "Do you get nightmares that feel stressful or remind you of bad experiences?"},
-        {"id": 21, "question": "Do you avoid certain people or activities because they make you uncomfortable or anxious?"},
-        {"id": 22, "question": "Do you often catch yourself thinking negatively about yourself or life?"},
-        {"id": 23, "question": "Do you struggle to stay focused on one thing for long?"},
-        {"id": 24, "question": "Do you sometimes blame yourself for things that aren’t really your fault?"},
-        {"id": 25, "question": "Have you ever seen or heard things that others couldn’t?"},
-        {"id": 26, "question": "Do you find yourself repeating certain actions or routines over and over?"},
-        {"id": 27, "question": "Do you notice your mood or energy changing depending on the season (like feeling low in winter)?"},
-        {"id": 28, "question": "Do you sometimes feel full of energy or excitement for no clear reason?"}
-    ]
-    return JsonResponse({"questions": questions})
-
+# 🧮 Receive answers and return prediction
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def submit_general_test(request):
@@ -157,39 +121,108 @@ def submit_general_test(request):
         data = json.loads(request.body.decode('utf-8'))
         answers = data.get('answers', [])
 
-        # تأكيد وجود 28 إجابة
+        # check if user answer 28 question or not
         if not answers or len(answers) != 28:
             return JsonResponse({"error": "28 answers are required"}, status=400)
 
         if model is None or label_encoder is None:
             return JsonResponse({"error": "Model or encoder not loaded"}, status=500)
 
-        # تحويل الإجابات إلى الشكل المطلوب للموديل
-        features = np.array([answers])
+        # check the age for first question , other questions
+        answers_numeric = []
+        for i, ans in enumerate(answers):
+            if i == 0:
+                try:
+                    age_value = float(ans)
+                    if age_value < 0:
+                        return JsonResponse({"error": "Age must be a positive number"}, status=400)
+                    answers_numeric.append(age_value)
+                except:
+                    return JsonResponse({"error": "Invalid age format"}, status=400)
+            else:
+                answers_numeric.append(1 if str(ans).lower() in ["yes", "true", "1"] else 0)
+
+        # change them to numbers
+        features = np.array([answers_numeric], dtype= float)
+
         prediction = model.predict(features)
         predicted_disorder = label_encoder.inverse_transform([np.argmax(prediction)])[0]
 
-        # 🧠 تمارين مقترحة حسب النتيجة
-        suggestions = {
-            "Major Depressive Disorder (MDD)": ["Journaling", "Light exercise", "Daily routine"],
-            "Autism Spectrum Disorder (ASD)": ["Structured activities", "Reduce screen time", "Positive reinforcement"],
-            "Loneliness": ["Connect with people", "Volunteer", "Join social groups"],
-            "Bipolar": ["Sleep schedule", "Mood tracking", "Avoid stress"],
-            "Anxiety": ["Deep breathing", "Meditation", "Limit caffeine"],
-            "Post-Traumatic Stress Disorder (PTSD)": ["Therapy", "Grounding exercises", "Mindfulness"],
-            "Sleeping Disorder": ["Sleep hygiene", "Avoid screens before bed", "Consistent schedule"],
-            "Psychotic Depression": ["Therapy support", "Regular sleep", "Avoid stressors"],
-            "Eating Disorder": ["Balanced meals", "Avoid mirrors", "Support groups"],
-            "Attention-Deficit/Hyperactivity Disorder (ADHD)": ["Task lists", "Short breaks", "Focus exercises"],
-            "Persistent Depressive Disorder (PDD)": ["Therapy", "Routine planning", "Small goals"],
-            "Obsessive-Compulsive Disorder (OCD)": ["CBT", "Avoid reassurance", "Routine stability"]
-        }
+        info = {
+                "Major Depressive Disorder (MDD)": {
+                    "description": "You may be showing signs of depression such as low mood and loss of interest.",
+                    "suggestions": ["Try journaling", "Do light exercise", "Follow a daily routine"],
+                    "video": "https://www.youtube.com/watch?v=inpok4MKVLM"
+                },
+                "Autism Spectrum Disorder (ASD)": {
+                    "description": "You may have challenges in social communication or interaction patterns.",
+                    "suggestions": ["Follow structured activities", "Reduce screen time", "Use positive reinforcement"],
+                    "video": "https://www.youtube.com/watch?v=wklfY1n7tNg"
+                },
+                "Loneliness": {
+                    "description": "You may be experiencing loneliness or social disconnection.",
+                    "suggestions": ["Reach out to old friends", "Join a community", "Volunteer regularly"],
+                    "video": "https://www.youtube.com/watch?v=kF8YzICpKaU"
+                },
+                "Bipolar": {
+                    "description": "You may experience mood swings between high energy and sadness.",
+                    "suggestions": ["Keep a sleep routine", "Track your moods", "Avoid stress triggers"],
+                    "video": "https://www.youtube.com/watch?v=U5m0pH6A0l8"
+                },
+                "Anxiety": {
+                    "description": "You may be showing symptoms of anxiety such as restlessness or overthinking.",
+                    "suggestions": ["Try deep breathing", "Practice mindfulness", "Limit caffeine intake"],
+                    "video": "https://www.youtube.com/watch?v=aNXKjGFUlMs"
+                },
+                "Post-Traumatic Stress Disorder (PTSD)": {
+                    "description": "You may experience flashbacks, nightmares, or anxiety from past trauma.",
+                    "suggestions": ["Try grounding techniques", "Seek therapy", "Practice mindfulness"],
+                    "video": "https://www.youtube.com/watch?v=8qW7xrW7g1Y"
+                },
+                "Sleeping Disorder": {
+                    "description": "You may have difficulty sleeping or maintaining sleep quality.",
+                    "suggestions": ["Keep consistent sleep hours", "Avoid screens before bed", "Create a calm bedtime routine"],
+                    "video": "https://www.youtube.com/watch?v=ZPZsK_Fc3X4"
+                },
+                "Psychotic Depression": {
+                    "description": "You may experience depressive thoughts with delusional ideas.",
+                    "suggestions": ["Seek professional therapy", "Follow a stable routine", "Reduce stress exposure"],
+                    "video": "https://www.youtube.com/watch?v=wGPJpG6XwRg"
+                },
+                "Eating Disorder": {
+                    "description": "You may have an unhealthy relationship with food or body image.",
+                    "suggestions": ["Eat balanced meals", "Avoid comparison", "Talk to a counselor"],
+                    "video": "https://www.youtube.com/watch?v=UYLa9D8pKSM"
+                },
+                "Attention-Deficit/Hyperactivity Disorder (ADHD)": {
+                    "description": "You may have trouble focusing or staying still for long periods.",
+                    "suggestions": ["Break tasks into parts", "Take short breaks", "Use focus exercises"],
+                    "video": "https://www.youtube.com/watch?v=5U3Vfu4g8kI"
+                },
+                "Persistent Depressive Disorder (PDD)": {
+                    "description": "You may experience long-term mild depression with low energy or motivation.",
+                    "suggestions": ["Follow a daily plan", "Set small goals", "Engage in enjoyable activities"],
+                    "video": "https://www.youtube.com/watch?v=z7I2h8s4p9E"
+                },
+                "Obsessive-Compulsive Disorder (OCD)": {
+                    "description": "You may experience repetitive thoughts or actions you feel forced to do.",
+                    "suggestions": ["Practice CBT techniques", "Avoid seeking reassurance", "Stick to a routine"],
+                    "video": "https://www.youtube.com/watch?v=Dp7LJXZVmsA"
+                }
+            }
+
+        result = info.get(predicted_disorder, {
+                "description": "No clear match found.",
+                "suggestions": [],
+                "video": ""
+            })
 
         return JsonResponse({
-            "predicted_disorder": predicted_disorder,
-            "suggestions": suggestions.get(predicted_disorder, [])
-        })
+                "predicted_disorder": predicted_disorder,
+                "description": result["description"],
+                "suggestions": result["suggestions"],
+                "video": result["video"]
+            })
 
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
-
+            return JsonResponse({"error": str(e)}, status=500)
