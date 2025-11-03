@@ -5,5 +5,14 @@ urlpatterns = [
     
     path('', views.predict, name='home'),
     path('api/predict/', views.api_predict, name='api_predict'),
+    path('api/general-test/', views.get_general_test),
+    path('api/general-test/submit/', views.submit_general_test),
+
+
+
+
+
+
+
 
 ]
