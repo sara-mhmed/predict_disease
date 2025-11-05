@@ -261,3 +261,14 @@ def test_result_detail (request, result_id):
         return JsonResponse({"error": "Result not found"}, status=404)
 
 
+from django.core.management import call_command
+from django.http import HttpResponse
+
+def run_migrations(request):
+    """⚠️ TEMP: Run migrations manually on Railway"""
+    try:
+        call_command('makemigrations', 'myapp')
+        call_command('migrate', 'myapp')
+        return HttpResponse("✅ Migrations for 'myapp' created and applied successfully!")
+    except Exception as e:
+        return HttpResponse(f"❌ Error while running migrations: {e}")
