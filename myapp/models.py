@@ -13,5 +13,5 @@ class GeneralTestResult(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Test Result for {self.user.username if self.user else 'Guest'} - {self.predict_disorder}"
+        return f"Test Result for {self.user.username if self.user else 'Guest'} - {self.predicted_disorder}"
     
