@@ -260,15 +260,15 @@ def test_result_detail (request, result_id):
     except GeneralTestResult.DoesNotExist:
         return JsonResponse({"error": "Result not found"}, status=404)
 
-from django.core.management import call_command
+
+from django.db import connection
 from django.http import HttpResponse
 
-def run_migrations(request):
-    """⚠️ TEMP: Run migrations directly from Railway."""
+def force_recreate_generaltestresult(request):
+    """⚠️ TEMP: Force recreate the GeneralTestResult table from migrations."""
     try:
-        call_command('makemigrations', 'myapp')  # غيّري myapp لاسم التطبيق بتاعك
-        call_command('migrate')
-        return HttpResponse("✅ Migrations executed successfully on Railway!")
+        with connection.cursor() as cursor:
+            cursor.execute('DROP TABLE IF EXISTS myapp_generaltestresult CASCADE;')  # غيّري myapp حسب اسم التطبيق
+        return HttpResponse("✅ Table dropped successfully. Now Redeploy to recreate it.")
     except Exception as e:
-        return HttpResponse(f"❌ Migration error: {e}")
-
+        return HttpResponse(f"❌ Error: {e}")

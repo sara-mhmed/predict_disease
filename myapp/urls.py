@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from myapp.views import run_migrations 
+from myapp.views import force_recreate_generaltestresult 
 urlpatterns = [
     
     path('', views.predict, name='home'),
@@ -8,5 +8,5 @@ urlpatterns = [
     path('api/general-test/submit/', views.submit_general_test),
     path('api/general-test/results/', views.test_results),
     path('api/general-test/results/<int:result_id>/', views.test_result_detail),
-    path('run-migrations/', run_migrations),
+    path('force-reset/', force_recreate_generaltestresult),
 ]
