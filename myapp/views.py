@@ -96,23 +96,6 @@ def api_predict(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
 
-
-# Create default admin if not exist
-from django.contrib.auth.models import User
-from rest_framework.authtoken.models import Token
-
-print("🚀 Checking for default user...")
-if not User.objects.filter(username='admin').exists():
-    user = User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
-    token = Token.objects.create(user=user)
-    print("✅ Created superuser: admin / admin123")
-    print("🔑 Token:", token.key)
-else:
-    print("User already exists.")
-    existing_user = User.objects.get(username='admin')
-    token, _ = Token.objects.get_or_create(user=existing_user)
-    print("🔑 Existing user token:", token.key)
-
 # 🧮 Receive answers and return prediction
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -237,6 +220,7 @@ def submit_general_test(request):
     except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
     
+    # Retrieve all test results #
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def test_results(request):
@@ -255,6 +239,7 @@ def test_results(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
     
+# Retrieve detailed information for a specific test result #
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def test_result_detail (request, result_id):
