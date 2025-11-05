@@ -261,3 +261,14 @@ def test_result_detail (request, result_id):
         return JsonResponse({"error": "Result not found"}, status=404)
 
 
+from django.db import connection
+from django.http import HttpResponse
+
+def reset_general_test_table(request):
+    """⚠️ TEMP: Delete the GeneralTestResult table and recreate it."""
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('DROP TABLE IF EXISTS myapp_generaltestresult CASCADE;')
+        return HttpResponse("✅ Table deleted successfully. Run migrations again to recreate it.")
+    except Exception as e:
+        return HttpResponse(f"❌ Error: {e}")
