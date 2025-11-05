@@ -272,3 +272,14 @@ def run_migrations(request):
         return HttpResponse("✅ Migrations for 'myapp' created and applied successfully!")
     except Exception as e:
         return HttpResponse(f"❌ Error while running migrations: {e}")
+
+from django.db import connection
+
+def clear_myapp_migrations_record(request):
+    """⚠️ TEMP: Delete myapp migration records from django_migrations"""
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("DELETE FROM django_migrations WHERE app='myapp';")
+        return HttpResponse("✅ Cleared myapp migration records. Now run /run-migrations/ again!")
+    except Exception as e:
+        return HttpResponse(f"❌ Error clearing migration records: {e}")
