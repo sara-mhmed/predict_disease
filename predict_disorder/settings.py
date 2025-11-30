@@ -17,7 +17,8 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
 
-if '127.0.0.1' not in ALLOWED_HOSTS:
+# Add localhost and 127.0.0.1 automatically in development
+if DEBUG:
     ALLOWED_HOSTS += ['127.0.0.1', 'localhost']
 
 # CSRF trusted origins
@@ -28,7 +29,6 @@ for host in ALLOWED_HOSTS:
         CSRF_TRUSTED_ORIGINS.append(f'http://{host}')
 
 # ---------------------------------------------------------------------
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -90,7 +90,6 @@ else:
     }
 
 # ---------------------------------------------------------------------
-
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -120,5 +119,10 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
 }
+
+# ---------------------------------------------------------------------
+# ML models paths
+MODEL_PATH = os.getenv('MODEL_PATH', 'ml_models/general_model.h5')
+ENCODER_PATH = os.getenv('ENCODER_PATH', 'ml_models/label_encoder.pkl')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

@@ -1,0 +1,74 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Depression Test</title>
+    <link rel="stylesheet" href="{% static 'styles/depression.css' %}">
+</head>
+<body>
+    <h2> Depression Questionnaire</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <label>1. What is your gender?</label>
+            <select name="gender" required>
+                <option>Male</option>
+                <option>Female</option>
+            </select>
+
+            <label>2. How old are you?</label>
+            <input type="number" name="age" min="0" required>
+
+            <label>3. How much Academic / Work pressure do you feel? (1-5)</label>
+            <input type="number" name="pressure" min="1" max="5" required>
+
+            <label>4. How satisfied are you with your Studies / Job? (1-5)</label>
+            <input type="number" name="satisfaction" min="1" max="5" required>
+
+            <label>5. How many hours do you sleep per day on average?</label>
+            <select name="sleep" required>
+                <option>Less than 5 hours</option>
+                <option>5–6 hours</option>
+                <option>7–8 hours</option>
+                <option>More than 8 hours</option>
+            </select>
+
+            <label>6. How would you describe your dietary habits?</label>
+            <select name="diet" required>
+                <option>Healthy</option>
+                <option>Moderate</option>
+                <option>Unhealthy</option>
+            </select>
+
+            <label>7. Have you ever had suicidal thoughts?</label>
+            <select name="suicidal" required>
+                <option>No</option>
+                <option>Yes</option>
+            </select>
+
+            <label>8. How many hours do you Study / Work per day?</label>
+            <input type="number" name="study_hours" min="0" max="12" required>
+
+            <label>9. How much financial stress do you feel right now? (1-5)</label>
+            <input type="number" name="financial" min="1" max="5" required>
+
+            <label>10. Does anyone in your family have a history of mental illness?</label>
+            <select name="family" required>
+                <option>No</option>
+                <option>Yes</option>
+            </select>
+
+            <button type="submit">Submit</button>
+        </form>
+
+        {% if result %}
+            <p class="result">{{ result }}</p>
+        {% endif %}
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+    </div>
+</body>
+</body>
+</html>

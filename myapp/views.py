@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 import json
 import os
+import pandas as pd
 import numpy as np
 from tensorflow.keras.models import load_model
 import joblib
@@ -28,6 +29,18 @@ try:
 except Exception as e:
     print("⚠️ Could not load label encoder:", e)
     label_encoder = None
+
+# ---- Depression Model ----
+try:
+    
+    print("🧠 Loading Depression model...")
+    depression_model = joblib.load(os.path.join('ml_models', 'depression_model.pkl'))
+    scaler = joblib.load(os.path.join('ml_models', 'scaler.pkl'))
+    print("✅ Depression model and scaler loaded successfully!")
+except Exception as e:
+    print("❌ Error loading depression model or scaler:", e)
+    depression_model = None
+    scaler = None
 
 print("🔥 Views.py finished loading!")
 
@@ -90,13 +103,13 @@ def api_predict(request):
 
         return JsonResponse({
             "predicted_disorder": predicted_disorder,
-            "user": request.user.username  # optional
+            "user": request.user.username  
         })
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
 
-# 🧮 Receive answers and return prediction
+# Receive answers and return prediction
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def submit_general_test(request):
@@ -201,62 +214,114 @@ def submit_general_test(request):
                 "suggestions": [],
                 "video": ""
             })
-        # Save the result to the database
-        GeneralTestResult.objects.create(
-            user=request.user if request.user.is_authenticated else None,
-            predicted_disorder= predicted_disorder,
-            description=result["description"],
-            suggestions=result["suggestions"],
-            video_url=result["video"],
-            answers=answers_numeric
-        )
+       # Save only for authenticated users
+        if request.user.is_authenticated:
+            GeneralTestResult.objects.create(
+                user=request.user,
+                predicted_disorder=predicted_disorder,
+                description=result["description"],
+                suggestions=result["suggestions"],
+                video_url=result["video"],
+                answers=answers_numeric
+            )
+
         return JsonResponse({
-                "predicted_disorder": predicted_disorder,
-                "description": result["description"],
-                "suggestions": result["suggestions"],
-                "video": result["video"]
-            })
+            "predicted_disorder": predicted_disorder,
+            "description": result["description"],
+            "suggestions": result["suggestions"],
+            "video": result["video"]
+        })
 
     except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+        return JsonResponse({"error": str(e)}, status=500)
     
     # Retrieve all test results #
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def test_results(request):
-    """Retrieve all test results for the authenticated user."""
     try:
-        results = GeneralTestResult.objects.filter(user=request.user if request.user.is_authenticated else None).order_by('-created_at')
+        if request.user.is_authenticated:
+            results = GeneralTestResult.objects.filter(user=request.user).order_by('-created_at')
+        else:
+            results = []
+
         results_data = [{
-            "predict_disorder": result.predicted_disorder,
-            "description": result.description,
-            "suggestions": result.suggestions,
-            "video_url": result.video_url,
-            "answers": result.answers,
-            "created_at": result.created_at
-        } for result in results]
-        return JsonResponse({"results": results_data})
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
-    
-# Retrieve detailed information for a specific test result #
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def test_result_detail (request, result_id):
-    """Retrieve detailed information for a specific test result."""
-    try:
-        result = GeneralTestResult.objects.get(id=result_id)
-        result_data = {
             "id": result.id,
-            "user": result.user.username if result.user else "Guest",
             "predicted_disorder": result.predicted_disorder,
             "description": result.description,
             "suggestions": result.suggestions,
             "video_url": result.video_url,
             "answers": result.answers,
             "created_at": result.created_at
-        }
-        return JsonResponse({"result": result_data})
-    except GeneralTestResult.DoesNotExist:
-        return JsonResponse({"error": "Result not found"}, status=404)
+        } for result in results]
+
+        return JsonResponse({"results": results_data})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+# depression questionnaire page
+
+def predict_depression(request):
+    result = None 
+
+    if request.method == 'POST':
+        #Read data from the form html 
+        try:
+            gender = request.POST['gender']
+            age = float(request.POST['age'])
+            work_pressure = float(request.POST['pressure'])
+            job_satisfaction = float(request.POST['satisfaction'])
+            sleep_duration = request.POST['sleep']
+            dietary = request.POST['diet']
+            suicidal = request.POST['suicidal']
+            work_hours = float(request.POST['study_hours'])
+            financial_stress = float(request.POST['financial'])
+            family_history = request.POST['family']
+            
+            # change value to numeric like in the model training
+            gender = 1 if gender == 'Female' else 0
+            suicidal = 1 if suicidal == 'Yes' else 0
+            family_history = 1 if family_history == 'Yes' else 0
+
+            sleep_map = {
+                'Less than 5 hours': 3,
+                '5-6 hours': 5.5,
+                '7-8 hours': 7.5,
+                'More than 8 hours': 10
+            }
+            sleep_duration = sleep_map.get(sleep_duration, 7.5)
+
+            diet_map = {
+                'Unhealthy': 0,
+                'Moderate': 2.5,
+                'Healthy': 5
+            }
+            dietary = diet_map.get(dietary, 2.5)
+            # prepare the features for prediction from dataset
+            input_data = pd.DataFrame([[
+                gender, age, work_pressure, job_satisfaction, sleep_duration,
+                dietary, suicidal, work_hours, financial_stress, family_history
+            ]], columns=[
+                'Gender', 'Age', 'Work Pressure', 'Job Satisfaction', 
+                'Sleep Duration', 'Dietary Habits', 
+                'Have you ever had suicidal thoughts ?', 
+                'Work Hours', 'Financial Stress', 'Family History of Mental Illness'
+            ])
+
+            numeric_cols = ['Age', 'Work Pressure', 'Job Satisfaction', 'Work Hours', 'Financial Stress']
+            input_data [numeric_cols] = scaler.transform(input_data[numeric_cols])
+
+            prediction = depression_model.predict(input_data)[0]
+
+            print("🧠 Prediction:", prediction)
+            if int(prediction) == 1:
+                result = " You may be showing significant signs of depression. 😔"
+            else:
+                result = " You are unlikely to be experiencing depression. 🙂"
+
+        except Exception as e:
+            result = f" Error: {e}"
+    return render(request, 'depression.html', {'result': result})
+
 

@@ -7,7 +7,6 @@ urlpatterns = [
     path('api/predict/', views.api_predict, name='api_predict'),
     path('api/general-test/submit/', views.submit_general_test),
     path('api/general-test/results/', views.test_results),
-    path('api/general-test/results/<int:result_id>/', views.test_result_detail),
-    
+    path('depression/',views.predict_depression, name='depression' )
    
 ]

@@ -1,0 +1,98 @@
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 100vh;
+  margin: 0;
+  padding: 20px;
+}
+
+h2{
+  color: #2e7d32;
+  padding-top: 30px;
+  margin: 10px;
+}
+button {
+  background-color: #378316;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  grid-column: span 2;
+  margin-top: 10px;
+}
+button:hover {
+  background-color: #2e7d32;
+  transform: scale(1.05);
+}
+form {
+  background-color: #fff;
+  max-width: 500px;
+  width: 100%;
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 8px 25px rgba(173, 119, 100, 0.2);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px 30px;
+  text-align: left;
+}
+
+.form-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+label {
+  font-weight: bold;
+  width: 100%;
+  color: #333;
+}
+
+input[type="number"],
+select {
+  width:80%;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+  text-align: center;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input[type="number"]:focus,
+select:focus {
+  border-color: #d53905;
+  box-shadow: 0 0 6px rgba(213, 57, 5, 0.3);
+  outline: none;
+}
+
+.result {
+  grid-column: span 2;
+  margin-top: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #2e7d32;
+  text-align: center;
+  background: #e8f5e9;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.error {
+  grid-column: span 2;
+  color: #d22828;
+  font-weight: bold;
+  margin-top: 10px;
+  text-align: center;
+  background: #ffebee;
+  padding: 10px;
+  border-radius: 8px;
+}
