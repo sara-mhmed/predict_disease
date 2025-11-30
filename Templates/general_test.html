@@ -1,0 +1,26 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>General Test</title>
+    <link rel="stylesheet" href="{% static 'styles/styles.css' %}">
+</head>
+<body>
+    <h1>Mental Health Prediction</h1>
+    <form method="POST">
+        {% csrf_token %}
+        {% for feature in features %}
+            <div class="form-group">
+                <label>{{ feature|capfirst }}:</label>
+                <input type="number" name="{{ feature }}" min="0" max="1" required>
+            </div>
+        {% endfor %}
+        <button type="submit">Predict Disorder</button>
+    </form>
+    <div>
+        <h3>{{ result }}</h3>
+    </div>
+</body>
+</html>
