@@ -4,6 +4,8 @@ from .utils import FEATURES_NAME, predict_disorder
 
 def general_test_view(request):
     result_text = ""
+    error_message = ""
+    result = None
     if request.method == "POST":
         answers_numeric = []
         for i, feature in enumerate(FEATURES_NAME):
@@ -11,24 +13,39 @@ def general_test_view(request):
             if i == 0:
                 try:
                     age_value = float(val)
-                    answers_numeric.append(age_value if age_value >= 0 else 0)
-                except:
-                    answers_numeric.append(0)
+                    if age_value < 0 or age_value > 100:
+                        error_message = "please enter a valid age between 0 and 100."
+                        break  # نوقف المعالجة
+                except ValueError:
+                    error_message = "please enter a numeric value for age."
+                    break
+
+                answers_numeric.append(age_value)
             else:
-                answers_numeric.append(1 if str(val).lower() in ["yes", "true", "1"] else 0)
+                try:
+                    v = int(val)
+                    answers_numeric.append(1 if v == 1 else 0)
+                except:
+                    answers_numeric.append(
+                        1 if str(val).lower() in ["yes", "true", "1"] else 0
+                    )
+        if not error_message:
+            result = predict_disorder(answers_numeric)
+            predicted = result.get("predicted_disorder", "Unknown")
+            description = result.get("description", "")
+            suggestions = result.get("suggestions", [])
+            video = result.get("video", "")
 
-        result = predict_disorder(answers_numeric)
+            result_text = f"Predicted Disorder: {predicted}"
 
-        if request.user.is_authenticated:
-            GeneralTestResult.objects.create(
-                user=request.user,
-                predicted_disorder=result["predicted_disorder"],
-                description=result["description"],
-                suggestions=result["suggestions"],
-                video_url=result["video"],
-                answers=answers_numeric
-            )
+            if request.user.is_authenticated and result is not None:
+                GeneralTestResult.objects.create(
+                    user=request.user,
+                    predicted_disorder=predicted,
+                    description=description,
+                    suggestions=suggestions,
+                    video_url=video,
+                    answers=answers_numeric
+                )
 
-        result_text = f"Predicted Disorder: {result['predicted_disorder']}"
-
-    return render(request, "general_test.html", {"result": result_text, "features": FEATURES_NAME})
+    return render(request, "general_test.html", {"result": result_text, "features": FEATURES_NAME, "error_message":error_message})

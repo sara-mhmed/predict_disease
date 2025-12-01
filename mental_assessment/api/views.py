@@ -11,17 +11,22 @@ class GeneralTestApiView(APIView):
     def post(self, request):
         answers = request.data.get("answers", [])
         if len(answers) != 28:
-            return Response({"error": "28 answers required"}, status=400)
+            return Response({"error": "28 answers are required"}, status=400)
 
         answers_numeric = []
         for i, val in enumerate(answers):
             if i == 0:
                 try:
                     age_value = float(val)
-                    answers_numeric.append(age_value if age_value >= 0 else 0)
+                    if age_value < 0 or age_value > 100:
+                            return Response({"error": "Age must be between 0 and 100."}, status=400)
+                    answers_numeric.append(age_value)
                 except:
-                    answers_numeric.append(0)
+                    return Response({"error": "Age must be a numeric value."}, status=400)
             else:
+                if str(val).lower() not in ["yes", "no", "true", "false", "1", "0"]:
+                  return Response({"error": f"Invalid answer at position {i+1}"}, status=400)
+
                 answers_numeric.append(1 if str(val).lower() in ["yes", "true", "1"] else 0)
 
         result = predict_disorder(answers_numeric)
